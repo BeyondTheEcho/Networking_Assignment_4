@@ -54,26 +54,15 @@ void Handle_GameOver(http_request request)
 
 	if (wcscmp(APIPath.c_str(), L"/SLCGame311/GameOver/") == 0)
 	{
-		if (request.headers().has(L"GameOver"))
-		{
-			value JSONObj = value::object();
-			http_headers reqHeaders = request.headers();
+		value JSONObj = value::object();
+		JSONObj[L"GameOver"] = web::json::value::boolean(true);
 
-			JSONObj[L"GameOver"] = value::string(reqHeaders[L"GameOver"]);
-
-			request.reply(status_codes::FailedDependency, JSONObj);
-		}
-		else
-		{
-			request.reply(status_codes::FailedDependency, "Failed Dependency");
-		}
+		request.reply(status_codes::OK, JSONObj);
 	}
 	else
 	{
 		request.reply(status_codes::BadRequest, "Bad Request");
 	}
-
-	request.reply(status_codes::OK, "Status OK");
 }
 
 void Handle_Get(http_request request)
