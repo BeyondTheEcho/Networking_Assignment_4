@@ -2,6 +2,8 @@
 #include <cpprest/http_listener.h>
 #include <cpprest/json.h>
 #include <map>
+#include <time.h>
+#include <stdlib.h>
 
 #pragma comment(lib, "cpprest_2_10")
 
@@ -16,14 +18,19 @@ int g_SessionID = 0;
 
 int main()
 {
+	srand(time(0));
+
 	void Handle_Get(http_request request);
-	void Handle_GameOver(http_request request);
 	void Handle_Post(http_request request);
+	void Handle_GameOver(http_request request);
+	void Handle_Rand(http_request request);
+
 
 	http_listener listener(L"http://localhost:8777/SLCGame311");
 
 	listener.support(methods::GET, Handle_Get);
 	listener.support(methods::GET, Handle_GameOver);
+	listener.support(methods::GET, Handle_Rand);
 	listener.support(methods::POST, Handle_Post);
 
 	try
@@ -43,6 +50,29 @@ int main()
 	while (true);
 
 	return 0;
+}
+
+void Handle_Rand(http_request request)
+{
+	cout << " get request made!" << endl;
+
+	wstring APIPath = request.absolute_uri().to_string();
+	wcout << "\nAPI PATH: " << APIPath << endl;
+
+	if (wcscmp(APIPath.c_str(), L"/SLCGame311/Rand/") == 0)
+	{
+		value JSONObj = value::object();
+
+		auto random = rand();
+
+		JSONObj[L"RandVal"] = web::json::value::number(random);
+
+		request.reply(status_codes::OK, JSONObj);
+	}
+	else
+	{
+		request.reply(status_codes::BadRequest, "Bad Request");
+	}
 }
 
 void Handle_GameOver(http_request request)
