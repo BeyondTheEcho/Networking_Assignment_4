@@ -16,6 +16,8 @@ using namespace json;
 map<wstring, int> Sessions;
 int g_SessionID = 0;
 
+int m_Health = 100;
+
 int main()
 {
 	srand(time(0));
@@ -24,6 +26,7 @@ int main()
 	void Handle_Post(http_request request);
 	void Handle_GameOver(http_request request);
 	void Handle_Rand(http_request request);
+	void Handle_TakeDamage(http_request request);
 
 
 	http_listener listener(L"http://localhost:8777/SLCGame311");
@@ -32,6 +35,7 @@ int main()
 	listener.support(methods::GET, Handle_GameOver);
 	listener.support(methods::GET, Handle_Rand);
 	listener.support(methods::POST, Handle_Post);
+	listener.support(methods::POST, Handle_TakeDamage);
 
 	try
 	{
@@ -50,6 +54,55 @@ int main()
 	while (true);
 
 	return 0;
+}
+
+void Handle_TakeDamage(http_request request)
+{
+	cout << "\nhandle TakeDamage\n";
+
+	wstring APIPath = request.absolute_uri().to_string();
+	wcout << "\nAPI PATH: " << APIPath << endl;
+
+	if (wcscmp(APIPath.c_str(), L"/SLCGame311/TakeDamage/") == 0)
+	{
+		if (request.headers().has(L"Dmg"))
+		{
+			value ReqJSONData = value::object();
+
+			request.extract_json().then([&ReqJSONData](pplx::task<value>task)
+			{
+				ReqJSONData = task.get();
+			}).wait();
+
+			if (ReqJSONData.has_field(L"Damage"))
+			{
+				int dmg = ReqJSONData.at(L"Damage").as_number().to_int64();
+
+				m_Health -= dmg;
+
+				value JSON_HP_Obj = value::object();
+
+				JSON_HP_Obj[L"Health"] = web::json::value::number(m_Health);
+
+				request.reply(status_codes::OK, JSON_HP_Obj);
+			}
+			else
+			{
+				request.reply(status_codes::FailedDependency, "No Damage Key in JSON Object");
+			}
+		}
+		else
+		{
+			request.reply(status_codes::FailedDependency, "Header does not include \"Dmg\"");
+		}
+
+	}
+	else
+	{
+		request.reply(status_codes::BadRequest, "Bad Request");
+	}
+
+	request.reply(status_codes::OK, "Status OK");
 }
 
 void Handle_Rand(http_request request)
